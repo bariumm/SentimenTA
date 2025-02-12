@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
+import telegram_notifications
 
 class Position:
     def __init__(self, symbol, qty, entry_price, side, entry_time):
@@ -404,14 +405,17 @@ class PositionManager:
                     position_value = shares * float(order.filled_avg_price)
                     position_pct = (position_value / account_info['equity']) * 100
                     print(f"Order executed: {shares} shares of {symbol} ({position_pct:.1f}% position)")
+                    telegram_notifications.send_message(f"Order executed: {shares} shares of {symbol} ({position_pct:.1f}% position)")
                 else:
                     print(f"Order executed: {shares} shares of {symbol}")
+                    telegram_notifications(f"Order executed: {shares} shares of {symbol}")
             
             return order
         except Exception as e:
             print(f"\nError placing order:")
             print(f"Error type: {type(e).__name__}")
             print(f"Error message: {str(e)}")
+            telegram_notifications.send_message(f"Error placing order: {str(e)}")
             return None
     
     def check_position_available(self, symbol):
@@ -450,10 +454,12 @@ class PositionManager:
             if order.status == 'accepted':
                 self.pending_closes.add(symbol)
                 print(f"Close order queued: {symbol}")
+                telegram_notifications.send_message(f"Close order queued: {symbol}")
                 return order
                 
         except Exception as e:
             print(f"\nError closing position in {symbol}:")
             print(f"Error type: {type(e).__name__}")
             print(f"Error message: {str(e)}")
+            telegram_notifications.send_message(f"Error closing position in {symbol}: {str(e)}")
             return None
